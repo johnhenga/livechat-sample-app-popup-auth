@@ -20,28 +20,35 @@ function useUserIdentity() {
   const [userIdentity, setUserIdentity] = useState<UserIdentity | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
 
-  const authorize = () => {
+  const authorize = async () => {
     setLoading(true)
-    accountsSDK
-      .popup()
-      .authorize()
-      .then(setUserIdentity)
-      .finally(() => setLoading(false))
+    try {
+      const authorizeData = await accountsSDK.popup().authorize()
+      setUserIdentity(authorizeData)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const logout = () => {
+  const logout = async () => {
     if (userIdentity) {
-      fetch(`${Config.lcAccountsURL}/v2/sessions`, {
-        method: 'DELETE',
-        body: '{}',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `${userIdentity.token_type} ${userIdentity.access_token}`,
-        },
-      }).then((response) => {
+      try {
+        const response = await fetch(`${Config.lcAccountsURL}/v2/sessions`, {
+          method: 'DELETE',
+          body: '{}',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `${userIdentity.token_type} ${userIdentity.access_token}`,
+          },
+        })
+
         setUserIdentity(null)
         return response.json()
-      })
+      } catch (error) {
+        console.error(error)
+      }
     }
   }
 
